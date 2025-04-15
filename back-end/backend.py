@@ -176,7 +176,7 @@ def is_valid_email(email):
 def signup():
     data = request.json
     logger.info(f"Signup request received: {data}")
-    
+
     username = data.get('username')
     email = data.get('email')
     password = data.get('password')
