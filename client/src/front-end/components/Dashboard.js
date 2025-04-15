@@ -17,19 +17,12 @@ function Dashboard() {
         <div className="dashboard-grid">
           <div className="dashboard-card bg-blue-50 border border-blue-100">
             <h3 className="text-xl font-semibold mb-3">Ingredient Stats</h3>
-            <p className="text-gray-600">Coming soon: Track your ingredient usage and expiration dates.</p>
+            <p className="text-gray-600">Track your ingredient usage and expiration dates.</p>
           </div>
+          
           <div className="dashboard-card bg-green-50 border border-green-100">
             <h3 className="text-xl font-semibold mb-3">Meal Suggestions</h3>
-            <p className="text-gray-600">Coming soon: Get recipe ideas based on your available ingredients.</p>
-          </div>
-          <div className="dashboard-card bg-purple-50 border border-purple-100">
-            <h3 className="text-xl font-semibold mb-3">Shopping List</h3>
-            <p className="text-gray-600">Coming soon: Generate shopping lists based on planned meals.</p>
-          </div>
-          <div className="dashboard-card bg-amber-50 border border-amber-100">
-            <h3 className="text-xl font-semibold mb-3">Food Waste Tracker</h3>
-            <p className="text-gray-600">Coming soon: Track and reduce your food waste.</p>
+            <p className="text-gray-600">Get recipe ideas based on your available ingredients.</p>
           </div>
         </div>
       </div>

@@ -20,7 +20,7 @@ app = Flask(__name__)
 CORS(app, resources={r"/api/*": {"origins": ["http://localhost:3000", "http://127.0.0.1:3000"]}}, supports_credentials=True)
 
 # Initialize databases
-init_db()  # Initialize ingredients database
+# init_db()  # Initialize ingredients database
 init_recipe_db()  # Initialize recipe database
 
 # Add error handler for 500 errors
