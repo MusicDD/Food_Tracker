@@ -5,6 +5,10 @@ import logging
 import re
 import os
 import sys
+from recipes_db import (
+    get_recipe_suggestions, get_recipe_by_id, search_recipes,
+    add_favorite_recipe, get_favorite_recipes, remove_favorite_recipe, init_recipe_db
+)
 
 # Set up logging
 logging.basicConfig(level=logging.INFO, 
@@ -14,6 +18,10 @@ logger = logging.getLogger(__name__)
 app = Flask(__name__)
 # Configure CORS to allow requests from your React development server
 CORS(app, resources={r"/api/*": {"origins": ["http://localhost:3000", "http://127.0.0.1:3000"]}}, supports_credentials=True)
+
+# Initialize databases
+init_db()  # Initialize ingredients database
+init_recipe_db()  # Initialize recipe database
 
 # Add error handler for 500 errors
 @app.errorhandler(500)
@@ -401,6 +409,63 @@ def remove_ingredient():
     except Exception as e:
         logger.error(f"Error removing ingredient: {e}", exc_info=True)
         return jsonify({"error": f"Database error occurred: {str(e)}"}), 500
+# Adding ingrediants
+@app.route('/api/chat/recipes', methods=['POST'])
+def chat_recipes():
+    data = request.json
+    ingredients = data.get('ingredients', [])
+    username = data.get('username')
+    
+    if not ingredients:
+        return jsonify({"error": "Please provide ingredients"}), 400
+    
+    try:
+        conn = get_db_connection()
+        cursor = conn.cursor()
+        
+        # Convert ingredients to lowercase for case-insensitive matching
+        ingredients_lower = [i.lower() for i in ingredients]
+        
+        # Find recipes that contain any of the provided ingredients
+        placeholders = ','.join(['?'] * len(ingredients_lower))
+        query = f"""
+            SELECT r.id, r.name, r.description, r.instructions,
+                   GROUP_CONCAT(ri.ingredient) as all_ingredients,
+                   SUM(CASE WHEN LOWER(ri.ingredient) IN ({placeholders}) THEN 1 ELSE 0 END) as match_count,
+                   COUNT(ri.id) as total_ingredients
+            FROM recipes r
+            JOIN recipe_ingredients ri ON r.id = ri.recipe_id
+            GROUP BY r.id
+            HAVING match_count > 0
+            ORDER BY match_count DESC, total_ingredients ASC
+            LIMIT 5
+        """
+        
+        cursor.execute(query, ingredients_lower * 2)  # *2 because we use placeholders twice
+        recipes = cursor.fetchall()
+        
+        formatted_recipes = []
+        for recipe in recipes:
+            all_ingredients = recipe['all_ingredients'].split(',')
+            matching = [i for i in all_ingredients if i.lower() in ingredients_lower]
+            missing = [i for i in all_ingredients if i.lower() not in ingredients_lower]
+            
+            formatted_recipes.append({
+                'id': recipe['id'],
+                'name': recipe['name'],
+                'description': recipe['description'],
+                'matching_ingredients': matching,
+                'missing_ingredients': missing,
+                'match_percentage': round(recipe['match_count'] / recipe['total_ingredients'], 2),
+                'instructions': recipe['instructions'].split('\n') if recipe['instructions'] else []
+            })
+        
+        conn.close()
+        return jsonify({"recipes": formatted_recipes})
+        
+    except Exception as e:
+        logger.error(f"Error in chat_recipes: {e}", exc_info=True)
+        return jsonify({"error": str(e)}), 500
 
 # Add a simple test route to verify the API is working
 @app.route('/api/test', methods=['GET'])
@@ -462,3 +527,95 @@ def db_status():
 if __name__ == '__main__':
     logger.info("Starting Flask server on port 5000")
     app.run(debug=True, host='0.0.0.0', port=5000)
+@app.route('/api/recipes/suggest', methods=['GET'])
+def suggest_recipes():
+    username = request.args.get('username')
+    threshold = request.args.get('threshold', default=0.5, type=float)
+    
+    if not username:
+        return jsonify({"error": "Username is required"}), 400
+    
+    try:
+        suggestions = get_recipe_suggestions(username, threshold)
+        return jsonify({"recipes": suggestions})
+    except Exception as e:
+        logger.error(f"Error suggesting recipes: {e}", exc_info=True)
+        return jsonify({"error": f"Database error occurred: {str(e)}"}), 500
+
+@app.route('/api/recipes/<int:recipe_id>', methods=['GET'])
+def get_recipe(recipe_id):
+    try:
+        recipe = get_recipe_by_id(recipe_id)
+        if recipe:
+            return jsonify({"recipe": recipe})
+        else:
+            return jsonify({"error": "Recipe not found"}), 404
+    except Exception as e:
+        logger.error(f"Error getting recipe: {e}", exc_info=True)
+        return jsonify({"error": f"Database error occurred: {str(e)}"}), 500
+
+@app.route('/api/recipes/search', methods=['GET'])
+def search_recipe():
+    query = request.args.get('query', '')
+    
+    if not query:
+        return jsonify({"error": "Search query is required"}), 400
+    
+    try:
+        recipes = search_recipes(query)
+        return jsonify({"recipes": recipes})
+    except Exception as e:
+        logger.error(f"Error searching recipes: {e}", exc_info=True)
+        return jsonify({"error": f"Database error occurred: {str(e)}"}), 500
+
+@app.route('/api/recipes/favorite', methods=['POST'])
+def favorite_recipe():
+    data = request.json
+    username = data.get('username')
+    recipe_id = data.get('recipe_id')
+    
+    if not username or not recipe_id:
+        return jsonify({"error": "Username and recipe_id are required"}), 400
+    
+    try:
+        success = add_favorite_recipe(username, recipe_id)
+        if success:
+            return jsonify({"message": "Recipe added to favorites"})
+        else:
+            return jsonify({"error": "Failed to add recipe to favorites"}), 500
+    except Exception as e:
+        logger.error(f"Error adding favorite recipe: {e}", exc_info=True)
+        return jsonify({"error": f"Database error occurred: {str(e)}"}), 500
+
+@app.route('/api/recipes/favorite', methods=['DELETE'])
+def unfavorite_recipe():
+    data = request.json
+    username = data.get('username')
+    recipe_id = data.get('recipe_id')
+    
+    if not username or not recipe_id:
+        return jsonify({"error": "Username and recipe_id are required"}), 400
+    
+    try:
+        success = remove_favorite_recipe(username, recipe_id)
+        if success:
+            return jsonify({"message": "Recipe removed from favorites"})
+        else:
+            return jsonify({"error": "Failed to remove recipe from favorites"}), 500
+    except Exception as e:
+        logger.error(f"Error removing favorite recipe: {e}", exc_info=True)
+        return jsonify({"error": f"Database error occurred: {str(e)}"}), 500
+
+@app.route('/api/recipes/favorites', methods=['GET'])
+def get_favorites():
+    username = request.args.get('username')
+    
+    if not username:
+        return jsonify({"error": "Username is required"}), 400
+    
+    try:
+        recipes = get_favorite_recipes(username)
+        return jsonify({"recipes": recipes})
+    except Exception as e:
+        logger.error(f"Error getting favorite recipes: {e}", exc_info=True)
+        return jsonify({"error": f"Database error occurred: {str(e)}"}), 500
