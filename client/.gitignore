@@ -5,6 +5,7 @@
 /.pnp
 .pnp.js
 venv/
+back-end/venv/
 
 # testing
 /coverage
@@ -22,3 +23,5 @@ venv/
 npm-debug.log*
 yarn-debug.log*
 yarn-error.log*
+
+__pycache__
