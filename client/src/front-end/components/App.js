@@ -1,13 +1,16 @@
-import React, { useState } from 'react';
-import Login from './Login';
-import IngredientList from './IngredientList';
-import Home from './Home';
-import Signup from './Signup';
-import Dashboard from './Dashboard';
-import { AuthProvider, useAuth } from '../../context/AuthContext';
-import '../../App.css';
+import { BrowserRouter as Router, Routes, Route, Link, Navigate } from "react-router-dom";
+import Login from "./Login";
+import IngredientList from "./IngredientList";
+import Home from "./Home";
+import Signup from "./Signup";
+import Dashboard from "./Dashboard";
+import RecipeSuggestions from "./RecipeSuggestions";
+import RecipeDetail from "./RecipeDetail";
+import RecipeChat from "./RecipeChat";  // Add this import
+import { AuthProvider, useAuth } from "../../context/AuthContext";
+import "../../App.css";
 
-function Navigation({ currentPage, setCurrentPage }) {
+function Navigation() {
   const { user, logout, isAuthenticated } = useAuth();
 
   return (
@@ -15,51 +18,36 @@ function Navigation({ currentPage, setCurrentPage }) {
       <div className="container nav-content">
         <h1 className="nav-brand">Food Planner</h1>
         <div className="nav-links">
-          <button 
-            onClick={() => setCurrentPage('home')}
-            className="nav-link"
-          >
+          <Link to="/" className="nav-link">
             Home
-          </button>
-          
+          </Link>
+
           {isAuthenticated ? (
             <>
-              <button 
-                onClick={() => setCurrentPage('ingredients')}
-                className="nav-link"
-              >
+              <Link to="/ingredients" className="nav-link">
                 My Ingredients
-              </button>
-              <button 
-                onClick={() => setCurrentPage('dashboard')}
-                className="nav-link"
-              >
+              </Link>
+              <Link to="/recipes" className="nav-link">
+                Recipe Suggestions
+              </Link>
+              <Link to="/recipe-chat" className="nav-link">  {/* Add this link */}
+                Recipe Chat
+              </Link>
+              <Link to="/dashboard" className="nav-link">
                 Dashboard
-              </button>
-              <button 
-                onClick={() => {
-                  logout();
-                  setCurrentPage('home');
-                }}
-                className="nav-link"
-              >
+              </Link>
+              <button onClick={logout} className="nav-link">
                 Logout ({user?.username})
               </button>
             </>
           ) : (
             <>
-              <button 
-                onClick={() => setCurrentPage('login')}
-                className="nav-link"
-              >
+              <Link to="/login" className="nav-link">
                 Login
-              </button>
-              <button 
-                onClick={() => setCurrentPage('signup')}
-                className="nav-link"
-              >
+              </Link>
+              <Link to="/signup" className="nav-link">
                 Signup
-              </button>
+              </Link>
             </>
           )}
         </div>
@@ -68,46 +56,75 @@ function Navigation({ currentPage, setCurrentPage }) {
   );
 }
 
+function ProtectedRoute({ children }) {
+  const { isAuthenticated } = useAuth()
+
+  if (!isAuthenticated) {
+    return <Navigate to="/login" />
+  }
+
+  return children
+}
+
 function AppContent() {
-  const [currentPage, setCurrentPage] = useState('home');
-  const { isAuthenticated } = useAuth();
-
-  // Redirect to login if trying to access protected pages
-  React.useEffect(() => {
-    if (!isAuthenticated && (currentPage === 'ingredients' || currentPage === 'dashboard')) {
-      setCurrentPage('login');
-    }
-  }, [currentPage, isAuthenticated]);
-
-  const renderPage = () => {
-    switch (currentPage) {
-      case 'home':
-        return <Home />;
-      case 'login':
-        return <Login onLoginSuccess={() => setCurrentPage('ingredients')} />;
-      case 'signup':
-        return <Signup onSignupSuccess={() => setCurrentPage('ingredients')} />;
-      case 'ingredients':
-        return <IngredientList />;
-      case 'dashboard':
-        return <Dashboard />;
-      default:
-        return <Home />;
-    }
-  };
-
   return (
-    <div className="min-h-screen">
-      <Navigation currentPage={currentPage} setCurrentPage={setCurrentPage} />
-      <main className="container main-content">
-        {renderPage()}
-      </main>
-      <footer className="footer">
-        <div className="container">
-          <p>© {new Date().getFullYear()} Food Planner. All rights reserved.</p>
-        </div>
-      </footer>
-    </div>
+    <Router>
+      <div className="min-h-screen">
+        <Navigation />
+        <main className="container main-content">
+          <Routes>
+            <Route path="/" element={<Home />} />
+            <Route path="/login" element={<Login />} />
+            <Route path="/signup" element={<Signup />} />
+            <Route
+              path="/ingredients"
+              element={
+                <ProtectedRoute>
+                  <IngredientList />
+                </ProtectedRoute>
+              }
+            />
+            <Route
+              path="/recipes"
+              element={
+                <ProtectedRoute>
+                  <RecipeSuggestions />
+                </ProtectedRoute>
+              }
+            />
+            <Route
+              path="/recipe-chat"  // Add this new route
+              element={
+                <ProtectedRoute>
+                  <RecipeChat />
+                </ProtectedRoute>
+              }
+            />
+            <Route
+              path="/recipe/:recipeId"
+              element={
+                <ProtectedRoute>
+                  <RecipeDetail />
+                </ProtectedRoute>
+              }
+            />
+            <Route
+              path="/dashboard"
+              element={
+                <ProtectedRoute>
+                  <Dashboard />
+                </ProtectedRoute>
+              }
+            />
+          </Routes>
+        </main>
+        <footer className="footer">
+          <div className="container">
+            <p>© {new Date().getFullYear()} Food Planner. All rights reserved.</p>
+          </div>
+        </footer>
+      </div>
+    </Router>
   );
 }
 
@@ -116,7 +133,7 @@ function App() {
     <AuthProvider>
       <AppContent />
     </AuthProvider>
-  );
+  )
 }
 
-export default App;
+export default App

@@ -219,6 +219,7 @@ body {
   border-radius: 0.5rem;
   background-color: white;
   box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+  height: 100%;
 }
 
 .footer {
@@ -233,4 +234,39 @@ body {
   min-height: 100vh;
   display: flex;
   flex-direction: column;
+}
+
+.chat-container {
+  border: 1px solid #e5e7eb;
+  border-radius: 0.5rem;
+  padding: 1rem;
+  background-color: #f9fafb;
+}
+
+.message {
+  padding: 0.75rem 1rem;
+  margin-bottom: 0.75rem;
+  border-radius: 0.5rem;
+  max-width: 80%;
+}
+
+.user-message {
+  background-color: var(--primary-color);
+  color: white;
+  margin-left: auto;
+}
+
+.bot-message {
+  background-color: white;
+  border: 1px solid #e5e7eb;
+  margin-right: auto;
+}
+
+.recipe-option {
+  transition: all 0.2s;
+}
+
+.recipe-option:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
 }
