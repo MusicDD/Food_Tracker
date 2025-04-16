@@ -264,6 +264,18 @@ def init_recipe_db():
     )
     ''')
     
+    # Create user_favorite_recipes table
+    cursor.execute('''
+    CREATE TABLE IF NOT EXISTS user_favorite_recipes (
+        id INTEGER PRIMARY KEY AUTOINCREMENT,
+        username TEXT NOT NULL,
+        recipe_id INTEGER NOT NULL,
+        created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+        FOREIGN KEY (username) REFERENCES users (username),
+        FOREIGN KEY (recipe_id) REFERENCES recipes (id)
+    )
+    ''')
+
     # Check if sample recipes exist
     cursor.execute("SELECT COUNT(*) FROM recipes")
     if cursor.fetchone()[0] == 0:

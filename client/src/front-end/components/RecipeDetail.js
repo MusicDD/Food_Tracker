@@ -1,6 +1,7 @@
 import { useState, useEffect } from "react"
 import { useParams, useNavigate } from "react-router-dom" // You'll need to install react-router-dom
 import { useAuth } from "../../context/AuthContext"
+import HeartButton from "./HeartButton"
 
 function RecipeDetail() {
   const [recipe, setRecipe] = useState(null)
@@ -126,16 +127,14 @@ function RecipeDetail() {
   return (
     <div className="max-w-4xl mx-auto">
       <div className="card">
-        <div className="flex justify-between items-start mb-4">
-          <h1 className="text-2xl font-bold">{recipe.name}</h1>
-          <button
-            onClick={toggleFavorite}
-            className={`px-3 py-1 rounded-md text-sm font-medium ${
-              isFavorite ? "bg-red-100 text-red-800 hover:bg-red-200" : "bg-gray-100 text-gray-800 hover:bg-gray-200"
-            }`}
-          >
-            {isFavorite ? "Remove from Favorites" : "Add to Favorites"}
-          </button>
+      <div className="flex justify-between items-center mb-4">
+        <h1 className="text-2xl font-bold">{recipe.name}</h1>
+          <HeartButton
+          recipeId={recipe.id}
+          isFavorite={isFavorite}
+          onToggle={toggleFavorite}
+          className="text-red-600 hover:text-red-700"
+          />
         </div>
 
         <p className="text-gray-600 mb-6">{recipe.description}</p>
@@ -177,15 +176,13 @@ function RecipeDetail() {
           <div>
             <h2 className="text-xl font-semibold mb-3">Instructions</h2>
             <ol className="space-y-3 list-decimal list-inside">
-              {recipe.instructions.split("\n").map((step, index) => {
-                // Remove the number at the beginning if present
-                const cleanStep = step.replace(/^\d+\.\s*/, "").trim()
-                if (!cleanStep) return null
-
+              {recipe.instructions.replace(/\r\n/g, '\n').split('\n').map((step, index) => {
+              const cleanStep = step.replace(/^\s*\d+[\.\)]\s*/, '').trim()
+              if (!cleanStep) return null
                 return (
-                  <li key={index} className="text-gray-700">
-                    {cleanStep}
-                  </li>
+                <li key={index} className="text-gray-700">
+                  {cleanStep}
+                </li>
                 )
               })}
             </ol>
