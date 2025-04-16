@@ -8,7 +8,10 @@ import RecipeSuggestions from "./RecipeSuggestions";
 import RecipeDetail from "./RecipeDetail";
 import RecipeChat from "./RecipeChat";  // Add this import
 import { AuthProvider, useAuth } from "../../context/AuthContext";
+import FavoriteRecipes from "./FavoriteRecipes";
 import "../../App.css";
+import { Heart } from "lucide-react";
+
 
 function Navigation() {
   const { user, logout, isAuthenticated } = useAuth();
@@ -35,6 +38,9 @@ function Navigation() {
               </Link>
               <Link to="/dashboard" className="nav-link">
                 Dashboard
+              </Link>
+              <Link to="/favorites" className="nav-link">
+                Favorites
               </Link>
               <button onClick={logout} className="nav-link">
                 Logout ({user?.username})
@@ -107,6 +113,14 @@ function AppContent() {
                   <RecipeDetail />
                 </ProtectedRoute>
               }
+            />
+            <Route
+              path="/favorites"
+              element={
+              <ProtectedRoute>
+                <FavoriteRecipes />
+              </ProtectedRoute>
+            }
             />
             <Route
               path="/dashboard"

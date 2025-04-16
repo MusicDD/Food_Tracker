@@ -441,7 +441,7 @@ def chat_recipes():
             LIMIT 5
         """
         
-        cursor.execute(query, ingredients_lower * 2)  # *2 because we use placeholders twice
+        cursor.execute(query, ingredients_lower)
         recipes = cursor.fetchall()
         
         formatted_recipes = []
@@ -524,9 +524,6 @@ def db_status():
         "working_directory": os.getcwd()
     })
 
-if __name__ == '__main__':
-    logger.info("Starting Flask server on port 5000")
-    app.run(debug=True, host='0.0.0.0', port=5000)
 @app.route('/api/recipes/suggest', methods=['GET'])
 def suggest_recipes():
     username = request.args.get('username')
@@ -607,7 +604,7 @@ def unfavorite_recipe():
         return jsonify({"error": f"Database error occurred: {str(e)}"}), 500
 
 @app.route('/api/recipes/favorites', methods=['GET'])
-def get_favorites():
+def get_favorites_route():
     username = request.args.get('username')
     
     if not username:
@@ -619,3 +616,7 @@ def get_favorites():
     except Exception as e:
         logger.error(f"Error getting favorite recipes: {e}", exc_info=True)
         return jsonify({"error": f"Database error occurred: {str(e)}"}), 500
+
+if __name__ == '__main__':
+    logger.info("Starting Flask server on port 5000")
+    app.run(debug=True, host='0.0.0.0', port=5000)

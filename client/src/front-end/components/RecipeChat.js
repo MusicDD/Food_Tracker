@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { useAuth } from '../../context/AuthContext';
+import HeartButton from "./HeartButton"
 
 function RecipeChat() {
   const [messages, setMessages] = useState([]);
@@ -7,6 +8,7 @@ function RecipeChat() {
   const [recipes, setRecipes] = useState([]);
   const [selectedRecipe, setSelectedRecipe] = useState(null);
   const [isLoading, setIsLoading] = useState(false);
+  const [favoriteIds, setFavoriteIds] = useState(new Set());
   const { user } = useAuth();
 
   const handleSend = async (e) => {
@@ -60,6 +62,32 @@ function RecipeChat() {
       setIsLoading(false);
     }
   };
+  
+  const toggleFavorite = async (recipeId) => {
+    if (!user?.username) return;
+  
+    const isFav = favoriteIds.has(recipeId);
+    const method = isFav ? 'DELETE' : 'POST';
+  
+    try {
+      const response = await fetch('http://localhost:5000/api/recipes/favorite', {
+        method,
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ username: user.username, recipe_id: recipeId })
+      });
+  
+      if (response.ok) {
+        setFavoriteIds(prev => {
+          const updated = new Set(prev);
+          isFav ? updated.delete(recipeId) : updated.add(recipeId);
+          return updated;
+        });
+      }
+    } catch (error) {
+      console.error("Error toggling favorite:", error);
+    }
+  };
+  
 
   return (
     <div className="max-w-2xl mx-auto">
@@ -111,6 +139,17 @@ function RecipeChat() {
               ← Back to suggestions
             </button>
             
+            <div className="flex justify-between items-center mb-2">
+            <HeartButton
+              recipeId={selectedRecipe.id}
+              isFavorite={favoriteIds.has(selectedRecipe.id)}
+              onToggle={() => toggleFavorite(selectedRecipe.id)}
+              className="hover:text-red-700"
+              />
+
+            </div>
+
+
             <h3 className="text-xl font-bold mb-2">{selectedRecipe.name}</h3>
             <p className="text-gray-600 mb-4">{selectedRecipe.description}</p>
             
@@ -147,14 +186,15 @@ function RecipeChat() {
             <div>
               <h4 className="font-medium mb-2">Instructions:</h4>
               <ol className="list-decimal list-inside space-y-2">
-                {selectedRecipe.instructions.map((step, i) => (
-                  <li key={i}>{step}</li>
-                ))}
-              </ol>
+                {selectedRecipe.instructions.map((step, i) => {
+                  const cleanStep = step.replace(/^\s*\d+[\.\)]?\s*/, '').trim();
+                  return <li key={i}>{cleanStep}</li>;
+                  })}
+                  </ol>
             </div>
           </div>
         )}
-        
+
         {/* Input form */}
         <form onSubmit={handleSend} className="flex gap-2">
           <input
